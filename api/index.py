@@ -11,7 +11,10 @@ app.add_middleware(
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Access-Control-Allow-Origin"],
 )
+
+CORS_HEADERS = {"Access-Control-Allow-Origin": "*"}
 
 # We ALSO stamp this header directly onto every response we build below,
 # so it's present even if the checker sends no Origin header at all.
