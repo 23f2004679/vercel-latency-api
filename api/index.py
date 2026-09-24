@@ -107,4 +107,7 @@ async def get_metrics(request: Request):
             "breaches": sum(1 for l in latencies if l > threshold),
         }
 
-    return JSONResponse(content=result, headers=CORS_HEADERS)
+    return JSONResponse(
+        content={"regions": result},
+        headers=CORS_HEADERS
+    )
