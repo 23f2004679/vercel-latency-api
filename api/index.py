@@ -1,27 +1,21 @@
 import math
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
+# Standard CORS setup - this part is known to work fine on Vercel.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# This runs for EVERY request/response, no exceptions, no conditions.
-# It just always stamps "any website may read this" onto the response.
-@app.middleware("http")
-async def add_cors_headers(request: Request, call_next):
-    response = await call_next(request)
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS, GET"
-    response.headers["Access-Control-Allow-Headers"] = "*"
-    return response
-
-
-# Browsers sometimes send a preflight OPTIONS request before the real POST.
-# This makes sure that preflight also gets a clean 200 with CORS headers.
-@app.options("/")
-async def preflight_ok():
-    return JSONResponse(content={})
-
+# We ALSO stamp this header directly onto every response we build below,
+# so it's present even if the checker sends no Origin header at all.
+CORS_HEADERS = {"Access-Control-Allow-Origin": "*"}
 
 DATA = [
   {"region": "apac", "service": "checkout", "latency_ms": 193.44, "uptime_pct": 97.871, "timestamp": 20250301},
@@ -81,7 +75,10 @@ def percentile(values, pct):
 
 @app.get("/")
 def health_check():
-    return {"status": "ok", "records_loaded": len(DATA)}
+    return JSONResponse(
+        content={"status": "ok", "records_loaded": len(DATA)},
+        headers=CORS_HEADERS,
+    )
 
 
 @app.post("/")
@@ -107,4 +104,4 @@ async def get_metrics(request: Request):
             "breaches": sum(1 for l in latencies if l > threshold),
         }
 
-    return result
+    return JSONResponse(content=result, headers=CORS_HEADERS)
